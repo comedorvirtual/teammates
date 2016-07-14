@@ -8,6 +8,7 @@ import teammates.common.util.Const;
 import teammates.common.util.FieldValidator;
 import teammates.common.util.Sanitizer;
 import teammates.common.util.Utils;
+import teammates.storage.entity.FeedbackPath;
 import teammates.storage.entity.FeedbackQuestion;
 
 import com.google.appengine.api.datastore.Text;
@@ -31,6 +32,7 @@ public class FeedbackQuestionAttributes extends EntityAttributes implements Comp
     public List<FeedbackParticipantType> showResponsesTo;
     public List<FeedbackParticipantType> showGiverNameTo;
     public List<FeedbackParticipantType> showRecipientNameTo;
+    public List<FeedbackPathAttributes> feedbackPathsAttributesList;
     protected transient Date createdAt;
     protected transient Date updatedAt;
     private String feedbackQuestionId;
@@ -57,6 +59,8 @@ public class FeedbackQuestionAttributes extends EntityAttributes implements Comp
         this.createdAt = fq.getCreatedAt();
         this.updatedAt = fq.getUpdatedAt();
         
+        this.feedbackPathsAttributesList = getFeedbackPathsAttributesList(fq.getFeedbackPaths());
+        
         removeIrrelevantVisibilityOptions();
     }
 
@@ -82,7 +86,7 @@ public class FeedbackQuestionAttributes extends EntityAttributes implements Comp
         return new FeedbackQuestion(feedbackSessionName, courseId, creatorEmail,
                                     questionMetaData, questionNumber, questionType, giverType,
                                     recipientType, numberOfEntitiesToGiveFeedbackTo,
-                                    showResponsesTo, showGiverNameTo, showRecipientNameTo);
+                                    showResponsesTo, showGiverNameTo, showRecipientNameTo, getFeedbackPaths());
     }
 
     @Override
@@ -601,4 +605,29 @@ public class FeedbackQuestionAttributes extends EntityAttributes implements Comp
         return getQuestionDetails().getQuestionAdditionalInfoHtml(questionNumber, "");
     }
     
+    public List<FeedbackPathAttributes> getFeedbackPathsAttributesList(
+            List<FeedbackPath> feedbackPaths) {
+        List<FeedbackPathAttributes> feedbackPathsAttributesList =
+                new ArrayList<FeedbackPathAttributes>();
+        for (FeedbackPath feedbackPath : feedbackPaths) {
+            feedbackPathsAttributesList.add(new FeedbackPathAttributes(feedbackPath));
+        }
+        return feedbackPathsAttributesList;
+    }
+    
+    public List<FeedbackPath> getFeedbackPaths(
+            List<FeedbackPathAttributes> feedbackPathsAttributesList) {
+        List<FeedbackPath> feedbackPaths = new ArrayList<FeedbackPath>();
+        if (feedbackPathsAttributesList != null) {
+            for (FeedbackPathAttributes feedbackPath : feedbackPathsAttributesList) {
+                feedbackPaths.add(feedbackPath.toEntity());
+            }
+        }
+        
+        return feedbackPaths;
+    }
+    
+    public List<FeedbackPath> getFeedbackPaths() {
+        return getFeedbackPaths(feedbackPathsAttributesList);
+    }
 }

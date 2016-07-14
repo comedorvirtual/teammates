@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import teammates.common.datatransfer.FeedbackParticipantType;
+import teammates.common.datatransfer.FeedbackPathAttributes;
 import teammates.common.datatransfer.FeedbackQuestionAttributes;
 import teammates.common.datatransfer.FeedbackQuestionDetails;
 import teammates.common.datatransfer.FeedbackQuestionType;
@@ -20,6 +21,9 @@ import teammates.common.util.Const.StatusMessageColor;
 import teammates.common.util.HttpRequestHelper;
 import teammates.common.util.StatusMessage;
 import teammates.logic.api.GateKeeper;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class InstructorFeedbackQuestionEditAction extends Action {
 
@@ -207,6 +211,17 @@ public class InstructorFeedbackQuestionEditAction extends Action {
             newQuestion.numberOfEntitiesToGiveFeedbackTo = Const.MAX_POSSIBLE_RECIPIENTS;
         }
         
+        if (newQuestion.questionType != FeedbackQuestionType.CONTRIB
+                && newQuestion.giverType == FeedbackParticipantType.CUSTOM
+                && newQuestion.recipientType == FeedbackParticipantType.CUSTOM) {
+            String customFeedbackPathsSpreadsheetData =
+                    HttpRequestHelper.getValueFromParamMap(
+                            requestParameters, "custom-feedback-paths-spreadsheet-data");
+            
+            newQuestion.feedbackPathsAttributesList =
+                    getFeedbackPathsAttributesListFromSpreadsheetData(customFeedbackPathsSpreadsheetData);
+        }
+        
         newQuestion.showResponsesTo = getParticipantListFromParams(
                 HttpRequestHelper.getValueFromParamMap(requestParameters,
                                                        Const.ParamsNames.FEEDBACK_QUESTION_SHOWRESPONSESTO));
@@ -257,5 +272,21 @@ public class InstructorFeedbackQuestionEditAction extends Action {
         }
         
         return list;
+    }
+    
+    private static List<FeedbackPathAttributes> getFeedbackPathsAttributesListFromSpreadsheetData(
+            String customFeedbackPathsSpreadsheetData) {
+        Gson gson = new Gson();
+        TypeToken<List<List<String>>> token = new TypeToken<List<List<String>>>(){};
+        List<List<String>> customFeedbackPaths =
+                gson.fromJson(customFeedbackPathsSpreadsheetData, token.getType());
+        List<FeedbackPathAttributes> feedbackPathsAttributesList = new ArrayList<FeedbackPathAttributes>();
+        for (List<String> feedbackPath : customFeedbackPaths) {
+            if (!feedbackPath.contains("") && !feedbackPath.contains(null)) {
+                feedbackPathsAttributesList.add(new FeedbackPathAttributes(feedbackPath.get(0), feedbackPath.get(1)));
+            }
+        }
+        
+        return feedbackPathsAttributesList;
     }
 }

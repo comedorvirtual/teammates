@@ -75,7 +75,13 @@ var customFeedbackPaths = {
         var $container = $questionForm.find('.custom-feedback-paths-spreadsheet');
         var giverType = $questionForm.find('select[id^="' + FEEDBACK_QUESTION_GIVERTYPE + '"]').val();
         var recipientType = $questionForm.find('select[id^="' + FEEDBACK_QUESTION_RECIPIENTTYPE + '"]').val();
-        var data = customFeedbackPaths.getDataForFeedbackPathsSpreadsheet(giverType, recipientType);
+        var data;
+        if (giverType === customFeedbackPaths.FEEDBACK_PARTICIPANT_TYPE_CUSTOM
+                && recipientType === customFeedbackPaths.FEEDBACK_PARTICIPANT_TYPE_CUSTOM) {
+            data = JSON.parse($questionForm.find('.custom-feedback-paths-spreadsheet-data-input').val());
+        } else {
+            data = customFeedbackPaths.getDataForFeedbackPathsSpreadsheet(giverType, recipientType);
+        }
         var columns = customFeedbackPaths.getColumnsForFeedbackPathsSpreadsheet(giverType, recipientType);
         $container.handsontable({
             data: data,
@@ -87,8 +93,18 @@ var customFeedbackPaths = {
             columns: columns,
             manualColumnResize: true,
             manualRowResize: true,
-            stretchH: 'all'
+            stretchH: 'all',
+            afterChange: function() {
+                customFeedbackPaths.updateCustomFeedbackPathsSpreadsheetDataInput($questionForm);
+            }
         });
+    },
+    
+    updateCustomFeedbackPathsSpreadsheetDataInput: function($questionForm) {
+        var $container = $questionForm.find('.custom-feedback-paths-spreadsheet');
+        var data = $container.handsontable('getData');
+        var $customFeedbackPathsSpreadsheetDataInput = $questionForm.find('.custom-feedback-paths-spreadsheet-data-input');
+        $customFeedbackPathsSpreadsheetDataInput.attr('value', JSON.stringify(data));
     },
     
     updateFeedbackPathsSpreadsheet: function($questionForm) {
